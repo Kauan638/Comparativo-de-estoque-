@@ -628,46 +628,71 @@ function salvarResumoPainelGeral(){
 // KPIs
 // =====================================
 
+// escreve texto num elemento só se ele existir —
+// evita que um elemento faltando (ex: index.html
+// desatualizado) quebre o processamento inteiro
+// e dispare o alerta de erro mesmo com dados ok
+
+function setTexto(id, valor){
+
+    const elemento =
+    document.getElementById(id);
+
+    if(!elemento){
+
+        console.warn(
+            `Elemento #${id} não encontrado no HTML (verifique se o index.html está atualizado).`
+        );
+
+        return;
+
+    }
+
+    elemento.innerText = valor;
+
+}
+
 function atualizarKPIs(){
 
-    document.getElementById("kpiTotal").innerText =
-    resultado.length;
-
-    document.getElementById("kpiSemApanha").innerText =
-    resultado.filter(
-        x=>!x.enderecoApanha
-    ).length;
-
-    document.getElementById("kpiSemPulmao").innerText =
-    resultado.filter(
-        x=>x.qtdPulmoes === 0
-    ).length;
-
-    document.getElementById("kpiTotalPulmoes").innerText =
-    resultado.reduce(
-        (s,x)=>s + x.qtdPulmoes,
-        0
+    setTexto(
+        "kpiTotal",
+        resultado.length
     );
 
-    document.getElementById("kpiUm").innerText =
-    resultado.filter(
-        x=>x.qtdPulmoes === 1
-    ).length;
+    setTexto(
+        "kpiSemApanha",
+        resultado.filter(x=>!x.enderecoApanha).length
+    );
 
-    document.getElementById("kpiDois").innerText =
-    resultado.filter(
-        x=>x.qtdPulmoes === 2
-    ).length;
+    setTexto(
+        "kpiSemPulmao",
+        resultado.filter(x=>x.qtdPulmoes === 0).length
+    );
 
-    document.getElementById("kpiTres").innerText =
-    resultado.filter(
-        x=>x.qtdPulmoes === 3
-    ).length;
+    setTexto(
+        "kpiTotalPulmoes",
+        resultado.reduce((s,x)=>s + x.qtdPulmoes, 0)
+    );
 
-    document.getElementById("kpiQuatroMais").innerText =
-    resultado.filter(
-        x=>x.qtdPulmoes >= 4
-    ).length;
+    setTexto(
+        "kpiUm",
+        resultado.filter(x=>x.qtdPulmoes === 1).length
+    );
+
+    setTexto(
+        "kpiDois",
+        resultado.filter(x=>x.qtdPulmoes === 2).length
+    );
+
+    setTexto(
+        "kpiTres",
+        resultado.filter(x=>x.qtdPulmoes === 3).length
+    );
+
+    setTexto(
+        "kpiQuatroMais",
+        resultado.filter(x=>x.qtdPulmoes >= 4).length
+    );
 
     const valorGanho =
     resultado
@@ -679,16 +704,14 @@ function atualizarKPIs(){
     .filter(x=>x.valorDivergencia !== null && x.valorDivergencia < 0)
     .reduce((s,x)=>s + Math.abs(x.valorDivergencia), 0);
 
-    document.getElementById("kpiValorGanho").innerText =
-    valorGanho.toLocaleString(
-        "pt-BR",
-        {style:"currency",currency:"BRL"}
+    setTexto(
+        "kpiValorGanho",
+        valorGanho.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
     );
 
-    document.getElementById("kpiValorPerda").innerText =
-    valorPerda.toLocaleString(
-        "pt-BR",
-        {style:"currency",currency:"BRL"}
+    setTexto(
+        "kpiValorPerda",
+        valorPerda.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
     );
 
 }
