@@ -371,7 +371,7 @@ function gerarComparativo(){
     // =====================================
     // MAPA DE VALOR POR UNIDADE
     // (arquivo "Análise ABC do Estoque":
-    // Código Produto -> Custo Líq. Unitário)
+    // Código Produto -> Cto Bruto Unitário)
     // =====================================
 
     const colCodigoValor =
@@ -383,7 +383,7 @@ function gerarComparativo(){
     const colValorUnitario =
     detectarColuna(
         dadosValores[0],
-        ["custo liq. unitário","custo liq unitario","custo líquido unitário"]
+        ["cto bruto unitário","custo bruto unitário","cto bruto unitario","custo bruto unitario"]
     );
 
     const mapaValores = Object.create(null);
