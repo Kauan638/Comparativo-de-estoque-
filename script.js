@@ -158,7 +158,9 @@ async function processar(){
         ocultarLoading();
 
         alert(
-            "Erro ao processar arquivos. Abra o console (F12) pra ver o detalhe."
+            "Erro ao processar arquivos:\n\n" +
+            erro.message +
+            "\n\n(detalhe técnico no console, F12)"
         );
 
     }
@@ -384,7 +386,7 @@ function gerarComparativo(){
         ["custo liq. unitário","custo liq unitario","custo líquido unitário"]
     );
 
-    const mapaValores = {};
+    const mapaValores = Object.create(null);
 
     if(colCodigoValor && colValorUnitario){
 
@@ -414,9 +416,9 @@ function gerarComparativo(){
 
     }
 
-    const mapaApanhas = {};
+    const mapaApanhas = Object.create(null);
 
-    const mapaPulmoes = {};
+    const mapaPulmoes = Object.create(null);
 
     dadosPosicoes.forEach(p=>{
 
@@ -565,11 +567,32 @@ function gerarComparativo(){
         resultado.length
     );
 
-    atualizarKPIs();
+    // cada etapa isolada: se uma falhar, avisa no
+    // console qual foi (em vez de travar tudo e
+    // cair só no "erro genérico"), e as outras
+    // etapas continuam rodando normalmente
 
-    renderizarCards();
+    try{
+        atualizarKPIs();
+    }
+    catch(erro){
+        console.error("Falha em atualizarKPIs():", erro);
+    }
 
-    salvarResumoPainelGeral();
+    try{
+        renderizarCards();
+    }
+    catch(erro){
+        console.error("Falha em renderizarCards():", erro);
+        throw erro;
+    }
+
+    try{
+        salvarResumoPainelGeral();
+    }
+    catch(erro){
+        console.error("Falha em salvarResumoPainelGeral():", erro);
+    }
 
 }
 
@@ -696,12 +719,12 @@ function atualizarKPIs(){
 
     const valorGanho =
     resultado
-    .filter(x=>x.valorDivergencia !== null && x.valorDivergencia > 0)
+    .filter(x=>typeof x.valorDivergencia === "number" && !isNaN(x.valorDivergencia) && x.valorDivergencia > 0)
     .reduce((s,x)=>s + x.valorDivergencia, 0);
 
     const valorPerda =
     resultado
-    .filter(x=>x.valorDivergencia !== null && x.valorDivergencia < 0)
+    .filter(x=>typeof x.valorDivergencia === "number" && !isNaN(x.valorDivergencia) && x.valorDivergencia < 0)
     .reduce((s,x)=>s + Math.abs(x.valorDivergencia), 0);
 
     setTexto(
@@ -837,7 +860,7 @@ function renderizarCards(dados = resultado){
                 </div>
 
                 ${
-                    item.valorUnitario !== null
+                    typeof item.valorUnitario === "number" && !isNaN(item.valorUnitario)
                     ? `
                 <div class="item-linha">
 
@@ -855,7 +878,7 @@ function renderizarCards(dados = resultado){
                 }
 
                 ${
-                    item.valorDivergencia !== null
+                    typeof item.valorDivergencia === "number" && !isNaN(item.valorDivergencia)
                     ? `
                 <div class="item-linha">
 
@@ -1246,13 +1269,13 @@ h1{
     </div>
 
     ${
-        item.valorUnitario !== null
+        typeof item.valorUnitario === "number" && !isNaN(item.valorUnitario)
         ? `<div class="linha"><b>Valor Unitário:</b> ${item.valorUnitario.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</div>`
         : ""
     }
 
     ${
-        item.valorDivergencia !== null
+        typeof item.valorDivergencia === "number" && !isNaN(item.valorDivergencia)
         ? `<div class="linha"><b>${item.valorDivergencia >= 0 ? "Impacto (Ganho):" : "Impacto (Perda):"}</b> ${item.valorDivergencia.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</div>`
         : ""
     }
@@ -1324,12 +1347,12 @@ function montarRelatorioImagem(){
 
     const valorGanho =
     resultado
-    .filter(x=>x.valorDivergencia !== null && x.valorDivergencia > 0)
+    .filter(x=>typeof x.valorDivergencia === "number" && !isNaN(x.valorDivergencia) && x.valorDivergencia > 0)
     .reduce((s,x)=>s + x.valorDivergencia, 0);
 
     const valorPerda =
     resultado
-    .filter(x=>x.valorDivergencia !== null && x.valorDivergencia < 0)
+    .filter(x=>typeof x.valorDivergencia === "number" && !isNaN(x.valorDivergencia) && x.valorDivergencia < 0)
     .reduce((s,x)=>s + Math.abs(x.valorDivergencia), 0);
 
     const valorGanhoFormatado =
