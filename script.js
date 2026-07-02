@@ -525,8 +525,21 @@ function renderizarCards(dados = resultado){
 
         }
 
+        let statusClasse = "item-card--ok";
+
+        if(!item.enderecoApanha){
+
+            statusClasse = "item-card--critico";
+
+        }
+        else if(item.qtdPulmoes === 0){
+
+            statusClasse = "item-card--atencao";
+
+        }
+
         html += `
-        <div class="item-card">
+        <div class="item-card ${statusClasse}">
 
             <div class="item-card-header">
 
