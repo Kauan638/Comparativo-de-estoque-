@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Comparativo de Estoque CD x Comercial
+    </title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Papa Parse -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>
+            📊 Comparativo de Estoque CD Locus x Comercial
+        </h1>
+
+        <!-- ===================================== -->
+        <!-- UPLOADS -->
+        <!-- ===================================== -->
+
+        <div class="card">
+
+            <h2>
+                Arquivos
+            </h2>
+
+            <div class="upload-area">
+
+                <!-- POSIÇÕES -->
+
+                <div class="upload-box">
+
+                    <label>
+                        📦 Posição de Endereços
+                    </label>
+
+                    <label
+                        class="upload-btn"
+                        for="arquivoPosicoes">
+
+                        Selecionar Arquivo
+
+                    </label>
+
+                    <input
+                        type="file"
+                        id="arquivoPosicoes"
+                        accept=".txt,.csv">
+
+                    <div
+                        class="upload-nome"
+                        id="nomePosicoes">
+
+                        Nenhum arquivo selecionado
+
+                    </div>
+
+                </div>
+
+                <!-- DIFERENÇA ESTOQUE -->
+
+                <div class="upload-box">
+
+                    <label>
+                        📊 Diferença Estoque CD Locus x Comercial
+                    </label>
+
+                    <label
+                        class="upload-btn"
+                        for="arquivoDiferenca">
+
+                        Selecionar Arquivo
+
+                    </label>
+
+                    <input
+                        type="file"
+                        id="arquivoDiferenca"
+                        accept=".txt,.csv">
+
+                    <div
+                        class="upload-nome"
+                        id="nomeDiferenca">
+
+                        Nenhum arquivo selecionado
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <br>
+
+            <div class="acoes">
+
+                <button
+                    class="btn-processar"
+                    onclick="processar()">
+
+                    🚀 Processar Comparativo
+
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- ===================================== -->
+        <!-- KPIs -->
+        <!-- ===================================== -->
+
+        <div class="kpis">
+
+            <div class="kpi-card">
+
+                <h3>
+                    Total de Itens
+                </h3>
+
+                <span id="kpiTotal">
+                    0
+                </span>
+
+            </div>
+
+            <div class="kpi-card">
+
+                <h3>
+                    Sem Apanha
+                </h3>
+
+                <span id="kpiSemApanha">
+                    0
+                </span>
+
+            </div>
+
+            <div class="kpi-card">
+
+                <h3>
+                    Sem Pulmão
+                </h3>
+
+                <span id="kpiSemPulmao">
+                    0
+                </span>
+
+            </div>
+
+            <div class="kpi-card">
+
+                <h3>
+                    Total de Pulmões
+                </h3>
+
+                <span id="kpiTotalPulmoes">
+                    0
+                </span>
+
+            </div>
+
+        </div>
+
+        <!-- ===================================== -->
+        <!-- FILTROS -->
+        <!-- ===================================== -->
+
+        <div class="card">
+
+            <h2>
+                Filtros
+            </h2>
+
+            <div class="filtros">
+
+                <input
+                    type="text"
+                    id="filtroSKU"
+                    placeholder="Filtrar por SKU ou descrição">
+
+                <input
+                    type="number"
+                    id="filtroQtdPulmoes"
+                    min="0"
+                    placeholder="Nº exato de pulmões (ex: 2)">
+
+            </div>
+
+        </div>
+
+        <!-- ===================================== -->
+        <!-- RESULTADO -->
+        <!-- ===================================== -->
+
+        <div class="card">
+
+            <h2>
+                Itens
+            </h2>
+
+            <div
+                class="cards-grid"
+                id="cardsContainer">
+
+                <p style="text-align:center;color:#6b7280;padding:40px;grid-column:1/-1;">
+                    Selecione os dois arquivos e clique em "Processar Comparativo".
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- LOADING -->
+    <!-- ===================================== -->
+
+    <div
+        class="loading"
+        id="loading">
+
+        <div class="spinner"></div>
+
+        <p>
+            Processando arquivos...
+        </p>
+
+    </div>
+
+<script src="script.js"></script>
+
+</body>
+
+</html>
