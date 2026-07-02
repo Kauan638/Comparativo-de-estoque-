@@ -675,6 +675,64 @@ function setTexto(id, valor){
 
 }
 
+// formata moeda completa, sempre com 2 casas
+// (usada nos cards de item, impressão e WhatsApp,
+// onde tem espaço de sobra)
+
+function formatarMoeda(valor){
+
+    return valor.toLocaleString(
+        "pt-BR",
+        {style:"currency",currency:"BRL"}
+    );
+
+}
+
+// formata moeda compacta ("R$ 1,5 mi", "R$ 468,7 mil")
+// usada só nos KPIs do topo, que têm largura fixa
+// e estouram com números grandes
+
+function formatarMoedaCompacta(valor){
+
+    return valor.toLocaleString(
+        "pt-BR",
+        {
+            style:"currency",
+            currency:"BRL",
+            notation:"compact",
+            maximumFractionDigits:1
+        }
+    );
+
+}
+
+// escreve um valor em R$ num KPI já formatado de forma
+// compacta, mas guarda o valor cheio no title (tooltip
+// ao passar o mouse) pra não perder a precisão
+
+function setTextoMoeda(id, valor){
+
+    const elemento =
+    document.getElementById(id);
+
+    if(!elemento){
+
+        console.warn(
+            `Elemento #${id} não encontrado no HTML (verifique se o index.html está atualizado).`
+        );
+
+        return;
+
+    }
+
+    elemento.innerText =
+    formatarMoedaCompacta(valor);
+
+    elemento.title =
+    formatarMoeda(valor);
+
+}
+
 function atualizarKPIs(){
 
     setTexto(
@@ -727,14 +785,14 @@ function atualizarKPIs(){
     .filter(x=>typeof x.valorDivergencia === "number" && !isNaN(x.valorDivergencia) && x.valorDivergencia < 0)
     .reduce((s,x)=>s + Math.abs(x.valorDivergencia), 0);
 
-    setTexto(
+    setTextoMoeda(
         "kpiValorGanho",
-        valorGanho.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+        valorGanho
     );
 
-    setTexto(
+    setTextoMoeda(
         "kpiValorPerda",
-        valorPerda.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+        valorPerda
     );
 
 }
@@ -869,7 +927,7 @@ function renderizarCards(dados = resultado){
                     </span>
 
                     <span class="item-valor">
-                        ${item.valorUnitario.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
+                        ${formatarMoeda(item.valorUnitario)}
                     </span>
 
                 </div>
@@ -887,7 +945,7 @@ function renderizarCards(dados = resultado){
                     </span>
 
                     <span class="item-valor ${item.valorDivergencia >= 0 ? "item-valor--ganho" : "item-valor--perda"}">
-                        ${item.valorDivergencia.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
+                        ${formatarMoeda(item.valorDivergencia)}
                     </span>
 
                 </div>
@@ -930,7 +988,17 @@ function obterFiltrado(){
     ? null
     : Number(qtdFiltroRaw);
 
-    return resultado.filter(item=>{
+    const tipoValor =
+    document
+    .getElementById("filtroTipoValor")
+    ?.value || "todos";
+
+    const ordenarPor =
+    document
+    .getElementById("ordenarPor")
+    ?.value || "sku";
+
+    let filtrado = resultado.filter(item=>{
 
         // SKU: correspondência EXATA — o código
         // precisa ser idêntico ao que foi digitado,
@@ -954,9 +1022,63 @@ function obterFiltrado(){
 
             item.qtdPulmoes === qtdFiltro;
 
-        return skuOk && qtdOk;
+        // ganho = divergência positiva (sobra) /
+        // perda = divergência negativa (falta) —
+        // só considera item com valor calculado
+
+        const temValor =
+        typeof item.valorDivergencia === "number" &&
+        !isNaN(item.valorDivergencia);
+
+        const valorOk =
+
+            tipoValor === "todos" ||
+
+            (tipoValor === "ganho" && temValor && item.valorDivergencia > 0) ||
+
+            (tipoValor === "perda" && temValor && item.valorDivergencia < 0);
+
+        return skuOk && qtdOk && valorOk;
 
     });
+
+    // ordenação — por padrão já vem por SKU (resultado
+    // já está ordenado assim); "maior ganho"/"maior perda"
+    // reordenam pelo impacto financeiro. Itens sem valor
+    // calculado vão pro final, não pro topo
+
+    if(ordenarPor === "maiorGanho"){
+
+        filtrado = filtrado.slice().sort((a,b)=>{
+
+            const valorA =
+            typeof a.valorDivergencia === "number" ? a.valorDivergencia : -Infinity;
+
+            const valorB =
+            typeof b.valorDivergencia === "number" ? b.valorDivergencia : -Infinity;
+
+            return valorB - valorA;
+
+        });
+
+    }
+    else if(ordenarPor === "maiorPerda"){
+
+        filtrado = filtrado.slice().sort((a,b)=>{
+
+            const valorA =
+            typeof a.valorDivergencia === "number" ? a.valorDivergencia : Infinity;
+
+            const valorB =
+            typeof b.valorDivergencia === "number" ? b.valorDivergencia : Infinity;
+
+            return valorA - valorB;
+
+        });
+
+    }
+
+    return filtrado;
 
 }
 
@@ -981,6 +1103,20 @@ window.addEventListener("load",()=>{
     .getElementById("filtroQtdPulmoes")
     ?.addEventListener(
         "input",
+        aplicarFiltros
+    );
+
+    document
+    .getElementById("filtroTipoValor")
+    ?.addEventListener(
+        "change",
+        aplicarFiltros
+    );
+
+    document
+    .getElementById("ordenarPor")
+    ?.addEventListener(
+        "change",
         aplicarFiltros
     );
 
@@ -1270,13 +1406,13 @@ h1{
 
     ${
         typeof item.valorUnitario === "number" && !isNaN(item.valorUnitario)
-        ? `<div class="linha"><b>Valor Unitário:</b> ${item.valorUnitario.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</div>`
+        ? `<div class="linha"><b>Valor Unitário:</b> ${formatarMoeda(item.valorUnitario)}</div>`
         : ""
     }
 
     ${
         typeof item.valorDivergencia === "number" && !isNaN(item.valorDivergencia)
-        ? `<div class="linha"><b>${item.valorDivergencia >= 0 ? "Impacto (Ganho):" : "Impacto (Perda):"}</b> ${item.valorDivergencia.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</div>`
+        ? `<div class="linha"><b>${item.valorDivergencia >= 0 ? "Impacto (Ganho):" : "Impacto (Perda):"}</b> ${formatarMoeda(item.valorDivergencia)}</div>`
         : ""
     }
 
