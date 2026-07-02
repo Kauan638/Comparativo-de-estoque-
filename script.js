@@ -436,6 +436,59 @@ function gerarComparativo(){
 
     renderizarCards();
 
+    salvarResumoPainelGeral();
+
+}
+
+// =====================================
+// RESUMO PRO PAINEL GERAL (VISÃO GERAL)
+// =====================================
+
+function salvarResumoPainelGeral(){
+
+    try{
+
+        const resumo = {
+
+            atualizadoEm: new Date().toISOString(),
+
+            totalItens: resultado.length,
+
+            semApanha: resultado.filter(
+                x=>!x.enderecoApanha
+            ).length,
+
+            semPulmao: resultado.filter(
+                x=>x.qtdPulmoes===0
+            ).length,
+
+            totalPulmoes: resultado.reduce(
+                (s,x)=>s+x.qtdPulmoes,
+                0
+            ),
+
+            diferencasNegativas: resultado.filter(
+                x=>Number(x.diferenca) < 0
+            ).length
+
+        };
+
+        localStorage.setItem(
+            "painelGeral_comparativo",
+            JSON.stringify(resumo)
+        );
+
+    }
+
+    catch(erro){
+
+        console.error(
+            "Não consegui salvar o resumo pro painel geral:",
+            erro
+        );
+
+    }
+
 }
 
 // =====================================
@@ -462,6 +515,26 @@ function atualizarKPIs(){
         (s,x)=>s + x.qtdPulmoes,
         0
     );
+
+    document.getElementById("kpiUm").innerText =
+    resultado.filter(
+        x=>x.qtdPulmoes === 1
+    ).length;
+
+    document.getElementById("kpiDois").innerText =
+    resultado.filter(
+        x=>x.qtdPulmoes === 2
+    ).length;
+
+    document.getElementById("kpiTres").innerText =
+    resultado.filter(
+        x=>x.qtdPulmoes === 3
+    ).length;
+
+    document.getElementById("kpiQuatroMais").innerText =
+    resultado.filter(
+        x=>x.qtdPulmoes >= 4
+    ).length;
 
 }
 
@@ -992,32 +1065,7 @@ h1{
 // GERAR IMAGEM PARA WHATSAPP
 // =====================================
 
-// limite de itens mostrados na imagem —
-// acima disso a lista fica grande demais
-// pra ser lida numa foto no celular;
-// use os filtros pra recortar antes de gerar
-
-const LIMITE_ITENS_IMAGEM = 40;
-
-function classeStatusItem(item){
-
-    if(!item.enderecoApanha){
-
-        return "ri-item--critico";
-
-    }
-
-    if(item.qtdPulmoes === 0){
-
-        return "ri-item--atencao";
-
-    }
-
-    return "ri-item--ok";
-
-}
-
-function montarRelatorioImagem(dados){
+function montarRelatorioImagem(){
 
     const container =
     document.getElementById("relatorioImagem");
@@ -1025,78 +1073,46 @@ function montarRelatorioImagem(dados){
     const agora =
     new Date().toLocaleString("pt-BR");
 
+    const total = resultado.length;
+
     const semApanha =
-    dados.filter(x=>!x.enderecoApanha).length;
+    resultado.filter(x=>!x.enderecoApanha).length;
 
     const semPulmao =
-    dados.filter(x=>x.qtdPulmoes===0).length;
+    resultado.filter(x=>x.qtdPulmoes===0).length;
 
     const totalPulmoes =
-    dados.reduce((s,x)=>s+x.qtdPulmoes,0);
+    resultado.reduce((s,x)=>s+x.qtdPulmoes,0);
 
-    const listaExibida =
-    dados.slice(0, LIMITE_ITENS_IMAGEM);
+    const umPulmao =
+    resultado.filter(x=>x.qtdPulmoes===1).length;
 
-    const restantes =
-    dados.length - listaExibida.length;
+    const doisPulmoes =
+    resultado.filter(x=>x.qtdPulmoes===2).length;
 
-    let itensHtml = "";
+    const tresPulmoes =
+    resultado.filter(x=>x.qtdPulmoes===3).length;
 
-    listaExibida.forEach(item=>{
+    const quatroOuMais =
+    resultado.filter(x=>x.qtdPulmoes>=4).length;
 
-        const pulmoesTexto =
+    function linha(label, valor){
 
-        item.pulmoes.length
-
-        ? item.pulmoes
-            .map(p=>`${p.endereco} (${p.quantidade})`)
-            .join(" • ")
-
-        : "Sem pulmão";
-
-        const diferencaTexto =
-
-        (item.diferenca !== null && item.diferenca !== undefined && item.diferenca !== "")
-
-        ? `Dif: ${item.diferenca}`
-
-        : "";
-
-        itensHtml += `
-
-        <div class="ri-item ${classeStatusItem(item)}">
-
-            <div class="ri-item-topo">
-
-                <span class="ri-item-sku">#${item.sku}</span>
-
-                <span class="ri-item-diferenca">${diferencaTexto}</span>
-
-            </div>
-
-            <div class="ri-item-descricao">
-                ${item.descricao || "Sem descrição"}
-            </div>
-
-            <div class="ri-item-linha">
-                <b>Apanha:</b> ${item.enderecoApanha || "Sem apanha cadastrada"}
-            </div>
-
-            <div class="ri-item-linha">
-                <b>Pulmões (${item.qtdPulmoes}):</b> ${pulmoesTexto}
-            </div>
-
+        return `
+        <div class="ri-dist-linha">
+            <span class="ri-dist-label">${label}</span>
+            <span class="ri-dist-valor">${valor}</span>
         </div>
         `;
 
-    });
+    }
 
     container.innerHTML = `
 
     <div class="ri-cabecalho">
 
         <div class="ri-titulo">
-            📊 Comparativo de Estoque CD x Comercial
+            📊 Relatório Executivo — Comparativo de Estoque
         </div>
 
         <div class="ri-faixa"></div>
@@ -1110,8 +1126,8 @@ function montarRelatorioImagem(dados){
     <div class="ri-kpis">
 
         <div class="ri-kpi">
-            <div class="ri-kpi-label">Total Itens</div>
-            <div class="ri-kpi-valor">${dados.length}</div>
+            <div class="ri-kpi-label">Total de Itens</div>
+            <div class="ri-kpi-valor">${total}</div>
         </div>
 
         <div class="ri-kpi">
@@ -1125,23 +1141,30 @@ function montarRelatorioImagem(dados){
         </div>
 
         <div class="ri-kpi">
-            <div class="ri-kpi-label">Total Pulmões</div>
+            <div class="ri-kpi-label">Total de Pulmões</div>
             <div class="ri-kpi-valor">${totalPulmoes}</div>
         </div>
 
     </div>
 
     <div class="ri-secao-titulo">
-        Itens ${restantes > 0 ? `(mostrando ${listaExibida.length} de ${dados.length})` : ""}
+        Distribuição por Nº de Pulmões
     </div>
 
-    ${itensHtml}
+    <div class="ri-distribuicao">
 
-    ${
-        restantes > 0
-        ? `<div class="ri-rodape">+ ${restantes} item(ns) não exibido(s) — use os filtros pra reduzir a lista antes de gerar a imagem.</div>`
-        : `<div class="ri-rodape">Gerado pelo Comparativo de Estoque CD x Comercial</div>`
-    }
+        ${linha("Itens com 1 pulmão", umPulmao)}
+        ${linha("Itens com 2 pulmões", doisPulmoes)}
+        ${linha("Itens com 3 pulmões", tresPulmoes)}
+        ${linha("Itens com 4 ou mais pulmões", quatroOuMais)}
+        ${linha("Itens sem pulmão", semPulmao)}
+        ${linha("Itens sem apanha", semApanha)}
+
+    </div>
+
+    <div class="ri-rodape">
+        Gerado pelo Comparativo de Estoque CD x Comercial
+    </div>
 
     `;
 
@@ -1159,19 +1182,7 @@ async function gerarImagemRelatorio(){
 
     }
 
-    const dados = obterFiltrado();
-
-    if(!dados.length){
-
-        alert(
-            "Nenhum item pra gerar imagem com os filtros atuais."
-        );
-
-        return;
-
-    }
-
-    montarRelatorioImagem(dados);
+    montarRelatorioImagem();
 
     if(document.fonts && document.fonts.ready){
 
