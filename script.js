@@ -987,3 +987,272 @@ h1{
     },500);
 
 }
+
+// =====================================
+// GERAR IMAGEM PARA WHATSAPP
+// =====================================
+
+// limite de itens mostrados na imagem —
+// acima disso a lista fica grande demais
+// pra ser lida numa foto no celular;
+// use os filtros pra recortar antes de gerar
+
+const LIMITE_ITENS_IMAGEM = 40;
+
+function classeStatusItem(item){
+
+    if(!item.enderecoApanha){
+
+        return "ri-item--critico";
+
+    }
+
+    if(item.qtdPulmoes === 0){
+
+        return "ri-item--atencao";
+
+    }
+
+    return "ri-item--ok";
+
+}
+
+function montarRelatorioImagem(dados){
+
+    const container =
+    document.getElementById("relatorioImagem");
+
+    const agora =
+    new Date().toLocaleString("pt-BR");
+
+    const semApanha =
+    dados.filter(x=>!x.enderecoApanha).length;
+
+    const semPulmao =
+    dados.filter(x=>x.qtdPulmoes===0).length;
+
+    const totalPulmoes =
+    dados.reduce((s,x)=>s+x.qtdPulmoes,0);
+
+    const listaExibida =
+    dados.slice(0, LIMITE_ITENS_IMAGEM);
+
+    const restantes =
+    dados.length - listaExibida.length;
+
+    let itensHtml = "";
+
+    listaExibida.forEach(item=>{
+
+        const pulmoesTexto =
+
+        item.pulmoes.length
+
+        ? item.pulmoes
+            .map(p=>`${p.endereco} (${p.quantidade})`)
+            .join(" • ")
+
+        : "Sem pulmão";
+
+        const diferencaTexto =
+
+        (item.diferenca !== null && item.diferenca !== undefined && item.diferenca !== "")
+
+        ? `Dif: ${item.diferenca}`
+
+        : "";
+
+        itensHtml += `
+
+        <div class="ri-item ${classeStatusItem(item)}">
+
+            <div class="ri-item-topo">
+
+                <span class="ri-item-sku">#${item.sku}</span>
+
+                <span class="ri-item-diferenca">${diferencaTexto}</span>
+
+            </div>
+
+            <div class="ri-item-descricao">
+                ${item.descricao || "Sem descrição"}
+            </div>
+
+            <div class="ri-item-linha">
+                <b>Apanha:</b> ${item.enderecoApanha || "Sem apanha cadastrada"}
+            </div>
+
+            <div class="ri-item-linha">
+                <b>Pulmões (${item.qtdPulmoes}):</b> ${pulmoesTexto}
+            </div>
+
+        </div>
+        `;
+
+    });
+
+    container.innerHTML = `
+
+    <div class="ri-cabecalho">
+
+        <div class="ri-titulo">
+            📊 Comparativo de Estoque CD x Comercial
+        </div>
+
+        <div class="ri-faixa"></div>
+
+        <div class="ri-data">
+            ${agora}
+        </div>
+
+    </div>
+
+    <div class="ri-kpis">
+
+        <div class="ri-kpi">
+            <div class="ri-kpi-label">Total Itens</div>
+            <div class="ri-kpi-valor">${dados.length}</div>
+        </div>
+
+        <div class="ri-kpi">
+            <div class="ri-kpi-label">Sem Apanha</div>
+            <div class="ri-kpi-valor">${semApanha}</div>
+        </div>
+
+        <div class="ri-kpi">
+            <div class="ri-kpi-label">Sem Pulmão</div>
+            <div class="ri-kpi-valor">${semPulmao}</div>
+        </div>
+
+        <div class="ri-kpi">
+            <div class="ri-kpi-label">Total Pulmões</div>
+            <div class="ri-kpi-valor">${totalPulmoes}</div>
+        </div>
+
+    </div>
+
+    <div class="ri-secao-titulo">
+        Itens ${restantes > 0 ? `(mostrando ${listaExibida.length} de ${dados.length})` : ""}
+    </div>
+
+    ${itensHtml}
+
+    ${
+        restantes > 0
+        ? `<div class="ri-rodape">+ ${restantes} item(ns) não exibido(s) — use os filtros pra reduzir a lista antes de gerar a imagem.</div>`
+        : `<div class="ri-rodape">Gerado pelo Comparativo de Estoque CD x Comercial</div>`
+    }
+
+    `;
+
+}
+
+async function gerarImagemRelatorio(){
+
+    if(!resultado.length){
+
+        alert(
+            "Processe os arquivos primeiro."
+        );
+
+        return;
+
+    }
+
+    const dados = obterFiltrado();
+
+    if(!dados.length){
+
+        alert(
+            "Nenhum item pra gerar imagem com os filtros atuais."
+        );
+
+        return;
+
+    }
+
+    montarRelatorioImagem(dados);
+
+    if(document.fonts && document.fonts.ready){
+
+        await document.fonts.ready;
+
+    }
+
+    const elemento =
+    document.getElementById("relatorioImagem");
+
+    let canvas;
+
+    try{
+
+        canvas = await html2canvas(elemento, {
+
+            backgroundColor: "#14181C",
+
+            scale: 2
+
+        });
+
+    }
+
+    catch(erro){
+
+        console.error(erro);
+
+        alert(
+            "Não consegui gerar a imagem. Veja o console (F12) pra detalhes."
+        );
+
+        return;
+
+    }
+
+    canvas.toBlob(async blob=>{
+
+        if(!blob){
+
+            alert("Falha ao gerar a imagem.");
+
+            return;
+
+        }
+
+        try{
+
+            await navigator.clipboard.write([
+
+                new ClipboardItem({
+                    "image/png": blob
+                })
+
+            ]);
+
+            alert(
+                "✅ Imagem copiada! Agora é só abrir a conversa no WhatsApp e colar (Ctrl+V)."
+            );
+
+        }
+
+        catch(erro){
+
+            console.error(erro);
+
+            const link = document.createElement("a");
+
+            link.href = URL.createObjectURL(blob);
+
+            link.download =
+            `comparativo_estoque_${new Date().toISOString().slice(0,10)}.png`;
+
+            link.click();
+
+            alert(
+                "Seu navegador não permitiu copiar direto pro clipboard, então baixei a imagem — é só anexar ela no WhatsApp."
+            );
+
+        }
+
+    }, "image/png");
+
+}

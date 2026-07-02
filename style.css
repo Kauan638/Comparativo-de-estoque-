@@ -1176,3 +1176,356 @@ grid-template-columns:repeat(2,1fr);
     color:var(--amber);
 
 }
+
+/* =======================================================
+   NAVEGAÇÃO ENTRE FERRAMENTAS
+======================================================= */
+
+.nav-ferramentas{
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:12px;
+
+    flex-wrap:wrap;
+
+    margin:-10px auto 25px;
+
+}
+
+.nav-ferramentas a{
+
+    display:inline-block;
+
+    padding:10px 20px;
+
+    border-radius:var(--radius-sm);
+
+    border:1px solid var(--border-light);
+
+    background:var(--surface-alt);
+
+    color:var(--text-muted);
+
+    font-size:.8rem;
+
+    font-weight:700;
+
+    letter-spacing:.05em;
+
+    text-transform:uppercase;
+
+    text-decoration:none;
+
+    transition:.2s;
+
+}
+
+.nav-ferramentas a:hover{
+
+    border-color:var(--blue);
+
+    color:var(--blue);
+
+    transform:translateY(-2px);
+
+}
+
+.nav-ferramentas a.ativo{
+
+    border-color:var(--amber);
+
+    color:var(--amber);
+
+    background:var(--amber-dim);
+
+}
+
+/* =======================================================
+   BOTÃO WHATSAPP
+======================================================= */
+
+.btn-whatsapp{
+
+    background:var(--green);
+
+    color:#0B1F16;
+
+}
+
+.btn-whatsapp:hover{
+
+    background:#33B672;
+
+}
+
+/* =======================================================
+   RELATÓRIO PARA IMAGEM (WHATSAPP)
+   Renderizado fora da tela e capturado com html2canvas
+======================================================= */
+
+.relatorio-imagem{
+
+    position:fixed;
+
+    top:0;
+
+    left:-99999px;
+
+    width:760px;
+
+    background:var(--bg);
+
+    padding:32px;
+
+    font-family:var(--font-body);
+
+}
+
+.ri-cabecalho{
+
+    text-align:center;
+
+    margin-bottom:24px;
+
+    padding-bottom:20px;
+
+    border-bottom:1px solid var(--border);
+
+}
+
+.ri-titulo{
+
+    font-family:var(--font-display);
+
+    font-weight:700;
+
+    font-size:1.6rem;
+
+    letter-spacing:.04em;
+
+    text-transform:uppercase;
+
+    color:var(--text);
+
+}
+
+.ri-faixa{
+
+    width:180px;
+
+    height:5px;
+
+    margin:14px auto 12px;
+
+    border-radius:2px;
+
+    background:repeating-linear-gradient(
+        135deg,
+        var(--amber) 0px,
+        var(--amber) 9px,
+        var(--bg) 9px,
+        var(--bg) 18px
+    );
+
+}
+
+.ri-data{
+
+    color:var(--text-muted);
+
+    font-family:var(--font-mono);
+
+    font-size:.85rem;
+
+}
+
+.ri-kpis{
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:12px;
+
+    margin-bottom:26px;
+
+}
+
+.ri-kpi{
+
+    background:var(--surface);
+
+    border:1px solid var(--border);
+
+    border-left:4px solid var(--blue);
+
+    border-radius:var(--radius);
+
+    padding:14px 12px;
+
+}
+
+.ri-kpi:nth-child(1){ border-left-color:var(--blue); }
+.ri-kpi:nth-child(1) .ri-kpi-valor{ color:var(--blue); }
+
+.ri-kpi:nth-child(2){ border-left-color:var(--red); }
+.ri-kpi:nth-child(2) .ri-kpi-valor{ color:var(--red); }
+
+.ri-kpi:nth-child(3){ border-left-color:var(--amber); }
+.ri-kpi:nth-child(3) .ri-kpi-valor{ color:var(--amber); }
+
+.ri-kpi:nth-child(4){ border-left-color:var(--green); }
+.ri-kpi:nth-child(4) .ri-kpi-valor{ color:var(--green); }
+
+.ri-kpi-label{
+
+    font-size:.62rem;
+
+    font-weight:700;
+
+    letter-spacing:.06em;
+
+    text-transform:uppercase;
+
+    color:var(--text-muted);
+
+    margin-bottom:6px;
+
+}
+
+.ri-kpi-valor{
+
+    font-family:var(--font-mono);
+
+    font-size:1.5rem;
+
+    font-weight:700;
+
+    color:var(--text);
+
+}
+
+.ri-secao-titulo{
+
+    font-family:var(--font-display);
+
+    font-weight:600;
+
+    font-size:.9rem;
+
+    letter-spacing:.06em;
+
+    text-transform:uppercase;
+
+    color:var(--text);
+
+    border-left:3px solid var(--amber);
+
+    padding-left:10px;
+
+    margin-bottom:12px;
+
+}
+
+.ri-item{
+
+    background:var(--surface);
+
+    border:1px solid var(--border);
+
+    border-left:4px solid var(--blue);
+
+    border-radius:var(--radius);
+
+    padding:12px 14px;
+
+    margin-bottom:8px;
+
+}
+
+.ri-item.ri-item--critico{ border-left-color:var(--red); }
+.ri-item.ri-item--atencao{ border-left-color:var(--amber); }
+.ri-item.ri-item--ok{ border-left-color:var(--green); }
+
+.ri-item-topo{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:baseline;
+
+    margin-bottom:6px;
+
+}
+
+.ri-item-sku{
+
+    font-family:var(--font-mono);
+
+    font-weight:700;
+
+    font-size:.9rem;
+
+    color:var(--text);
+
+}
+
+.ri-item-diferenca{
+
+    font-family:var(--font-mono);
+
+    font-size:.75rem;
+
+    font-weight:700;
+
+    color:var(--text-muted);
+
+}
+
+.ri-item-descricao{
+
+    font-size:.78rem;
+
+    color:var(--text-muted);
+
+    margin-bottom:6px;
+
+}
+
+.ri-item-linha{
+
+    font-family:var(--font-mono);
+
+    font-size:.75rem;
+
+    color:var(--text);
+
+}
+
+.ri-item-linha b{
+
+    color:var(--text-muted);
+
+    font-family:var(--font-body);
+
+    font-weight:600;
+
+}
+
+.ri-rodape{
+
+    text-align:center;
+
+    margin-top:20px;
+
+    color:var(--text-muted);
+
+    font-size:.72rem;
+
+    font-family:var(--font-mono);
+
+}
