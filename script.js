@@ -609,11 +609,15 @@ function obterFiltrado(){
 
     return resultado.filter(item=>{
 
+        // SKU: correspondência EXATA — o código
+        // precisa ser idêntico ao que foi digitado,
+        // não "contém"
+
         const skuOk =
 
-            item.sku
-            .toLowerCase()
-            .includes(skuFiltro) ||
+            skuFiltro === "" ||
+
+            item.sku.toLowerCase() === skuFiltro ||
 
             (item.descricao || "")
             .toLowerCase()
@@ -658,3 +662,315 @@ window.addEventListener("load",()=>{
     );
 
 });
+
+// =====================================
+// IMPRIMIR
+// =====================================
+
+function imprimirComparativo(){
+
+    const dados = obterFiltrado();
+
+    if(!dados.length){
+
+        alert(
+            "Nenhum item pra imprimir com os filtros atuais."
+        );
+
+        return;
+
+    }
+
+    const janela = window.open("", "_blank");
+
+    if(!janela){
+
+        alert("Permita pop-ups para este site.");
+
+        return;
+
+    }
+
+    let html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>Comparativo de Estoque CD x Comercial</title>
+
+<style>
+
+@page{
+
+    size:A4 portrait;
+
+    margin:10mm;
+
+}
+
+*{
+
+    box-sizing:border-box;
+
+}
+
+body{
+
+    font-family:Arial,Helvetica,sans-serif;
+
+    color:#222;
+
+    margin:0;
+
+}
+
+h1{
+
+    margin:0 0 4px 0;
+
+    text-align:center;
+
+    color:#1e3a8a;
+
+    font-size:18px;
+
+}
+
+.info{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin-bottom:14px;
+
+    font-size:12px;
+
+}
+
+.item{
+
+    border:1px solid #d9d9d9;
+
+    border-radius:8px;
+
+    padding:12px;
+
+    margin-bottom:10px;
+
+    page-break-inside:avoid;
+
+}
+
+.item-topo{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:flex-start;
+
+    border-bottom:1px solid #eee;
+
+    padding-bottom:6px;
+
+    margin-bottom:6px;
+
+}
+
+.sku{
+
+    font-weight:bold;
+
+    font-size:15px;
+
+    color:#1e3a8a;
+
+}
+
+.descricao{
+
+    font-size:12px;
+
+    color:#444;
+
+}
+
+.diferenca{
+
+    font-size:11px;
+
+    font-weight:bold;
+
+    padding:3px 8px;
+
+    border-radius:10px;
+
+    background:#f3f4f6;
+
+    white-space:nowrap;
+
+}
+
+.linha{
+
+    font-size:12px;
+
+    margin-top:4px;
+
+}
+
+.linha b{
+
+    color:#1e3a8a;
+
+}
+
+.pulmoes{
+
+    margin-top:3px;
+
+}
+
+.pulmao-item{
+
+    display:inline-block;
+
+    background:#eef2f7;
+
+    border-radius:5px;
+
+    padding:2px 6px;
+
+    margin:2px 4px 0 0;
+
+    font-size:11px;
+
+}
+
+@media print{
+
+    .item{
+
+        -webkit-print-color-adjust:exact;
+
+        print-color-adjust:exact;
+
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>
+
+📊 COMPARATIVO DE ESTOQUE CD LOCUS x COMERCIAL
+
+</h1>
+
+<div class="info">
+
+<div>
+
+<b>Data:</b> ${new Date().toLocaleString("pt-BR")}
+
+</div>
+
+<div>
+
+<b>Total:</b> ${dados.length} itens
+
+</div>
+
+</div>
+
+`;
+
+    dados.forEach(item=>{
+
+        const pulmoesHtml =
+
+        item.pulmoes.length
+
+        ? item.pulmoes.map(
+            p=>`<span class="pulmao-item">${p.endereco} (${p.quantidade})</span>`
+          ).join("")
+
+        : `<span class="pulmao-item">Sem pulmão</span>`;
+
+        const diferencaHtml =
+
+        (item.diferenca !== null && item.diferenca !== undefined && item.diferenca !== "")
+
+        ? `<span class="diferenca">Diferença: ${item.diferenca}</span>`
+
+        : "";
+
+        html += `
+
+<div class="item">
+
+    <div class="item-topo">
+
+        <div>
+
+            <div class="sku">#${item.sku}</div>
+
+            <div class="descricao">${item.descricao || "Sem descrição"}</div>
+
+        </div>
+
+        ${diferencaHtml}
+
+    </div>
+
+    <div class="linha">
+
+        <b>Apanha:</b> ${item.enderecoApanha || "Sem apanha cadastrada"}
+
+    </div>
+
+    <div class="linha">
+
+        <b>Pulmões (${item.qtdPulmoes}):</b>
+
+        <div class="pulmoes">${pulmoesHtml}</div>
+
+    </div>
+
+</div>
+
+`;
+
+    });
+
+    html += `
+
+</body>
+
+</html>
+
+`;
+
+    janela.document.open();
+
+    janela.document.write(html);
+
+    janela.document.close();
+
+    setTimeout(()=>{
+
+        janela.focus();
+
+        janela.print();
+
+    },500);
+
+}
