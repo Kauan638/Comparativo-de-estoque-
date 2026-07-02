@@ -4,6 +4,7 @@
 
 let dadosPosicoes = [];
 let dadosDiferenca = [];
+let dadosValores = [];
 let resultado = [];
 
 // =====================================
@@ -33,6 +34,21 @@ document
 
     document
     .getElementById("nomeDiferenca")
+    .innerText =
+    arquivo
+    ? arquivo.name
+    : "Nenhum arquivo selecionado";
+
+});
+
+document
+.getElementById("arquivoValores")
+.addEventListener("change", function(){
+
+    const arquivo = this.files[0];
+
+    document
+    .getElementById("nomeValores")
     .innerText =
     arquivo
     ? arquivo.name
@@ -80,13 +96,18 @@ async function processar(){
         .getElementById("arquivoDiferenca")
         .files[0];
 
+        const arquivoValores =
+        document
+        .getElementById("arquivoValores")
+        .files[0];
+
         if(
             !arquivoPosicoes ||
             !arquivoDiferenca
         ){
 
             alert(
-                "Selecione os dois arquivos."
+                "Selecione ao menos os arquivos de Posição de Endereços e Diferença de Estoque."
             );
 
             ocultarLoading();
@@ -101,6 +122,11 @@ async function processar(){
         dadosDiferenca =
         await lerTXT(arquivoDiferenca);
 
+        dadosValores =
+        arquivoValores
+        ? await lerTXT(arquivoValores)
+        : [];
+
         console.log(
             "Posições carregadas:",
             dadosPosicoes.length,
@@ -111,6 +137,12 @@ async function processar(){
             "Diferença carregada:",
             dadosDiferenca.length,
             Object.keys(dadosDiferenca[0] || {})
+        );
+
+        console.log(
+            "Valores carregados:",
+            dadosValores.length,
+            Object.keys(dadosValores[0] || {})
         );
 
         gerarComparativo();
@@ -186,6 +218,37 @@ function normalizarCodigo(valor){
     .replace(",00","")
     .replace(".00","")
     .trim();
+
+}
+
+// converte número em formato PT-BR
+// ("1.234,56" ou "7,4200") pra Number.
+// retorna null se não der pra converter
+
+function parseNumeroPtBR(valor){
+
+    if(valor === null || valor === undefined){
+
+        return null;
+
+    }
+
+    const limpo = String(valor).trim();
+
+    if(limpo === ""){
+
+        return null;
+
+    }
+
+    const normalizado =
+    limpo
+    .replace(/\./g,"")
+    .replace(",",".");
+
+    const numero = Number(normalizado);
+
+    return isNaN(numero) ? null : numero;
 
 }
 
@@ -303,6 +366,54 @@ function gerarComparativo(){
     // ter centenas de milhares de linhas)
     // =====================================
 
+    // =====================================
+    // MAPA DE VALOR POR UNIDADE
+    // (arquivo "Análise ABC do Estoque":
+    // Código Produto -> Custo Líq. Unitário)
+    // =====================================
+
+    const colCodigoValor =
+    detectarColuna(
+        dadosValores[0],
+        ["código produto","codigo produto","código","codigo"]
+    );
+
+    const colValorUnitario =
+    detectarColuna(
+        dadosValores[0],
+        ["custo liq. unitário","custo liq unitario","custo líquido unitário"]
+    );
+
+    const mapaValores = {};
+
+    if(colCodigoValor && colValorUnitario){
+
+        dadosValores.forEach(v=>{
+
+            const codigo =
+            normalizarCodigo(v[colCodigoValor]);
+
+            if(!codigo){
+
+                return;
+
+            }
+
+            mapaValores[codigo] =
+            parseNumeroPtBR(v[colValorUnitario]);
+
+        });
+
+    }
+    else if(dadosValores.length){
+
+        console.log(
+            "Não consegui identificar as colunas do arquivo de valores. Colunas disponíveis:",
+            Object.keys(dadosValores[0])
+        );
+
+    }
+
     const mapaApanhas = {};
 
     const mapaPulmoes = {};
@@ -376,6 +487,11 @@ function gerarComparativo(){
         ? `${posicaoApanha.CODRUA}.${posicaoApanha.NROPREDIO}.${posicaoApanha.NROAPARTAMENTO}.${posicaoApanha.NROSALA}`
         : null;
 
+        const quantidadeApanha =
+        posicaoApanha
+        ? Number(posicaoApanha.QTD_END || 0)
+        : 0;
+
         const pulmoesBrutos =
         mapaPulmoes[sku] || [];
 
@@ -389,6 +505,18 @@ function gerarComparativo(){
             Number(p.QTD_END || 0)
 
         }));
+
+        const valorUnitario =
+        mapaValores[sku] ?? null;
+
+        const quantidadeTotal =
+        quantidadeApanha +
+        pulmoes.reduce((s,p)=>s+p.quantidade,0);
+
+        const valorTotalItem =
+        valorUnitario !== null
+        ? valorUnitario * quantidadeTotal
+        : null;
 
         resultado.push({
 
@@ -413,7 +541,11 @@ function gerarComparativo(){
 
             pulmoes,
 
-            qtdPulmoes: pulmoes.length
+            qtdPulmoes: pulmoes.length,
+
+            valorUnitario,
+
+            valorTotalItem
 
         });
 
@@ -536,6 +668,18 @@ function atualizarKPIs(){
         x=>x.qtdPulmoes >= 4
     ).length;
 
+    const valorTotalEstoque =
+    resultado.reduce(
+        (s,x)=>s + (x.valorTotalItem || 0),
+        0
+    );
+
+    document.getElementById("kpiValorTotal").innerText =
+    valorTotalEstoque.toLocaleString(
+        "pt-BR",
+        {style:"currency",currency:"BRL"}
+    );
+
 }
 
 // =====================================
@@ -657,6 +801,24 @@ function renderizarCards(dados = resultado){
                     </div>
 
                 </div>
+
+                ${
+                    item.valorUnitario !== null
+                    ? `
+                <div class="item-linha">
+
+                    <span class="item-label">
+                        💲 Valor Unitário
+                    </span>
+
+                    <span class="item-valor">
+                        ${item.valorUnitario.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
+                    </span>
+
+                </div>
+                    `
+                    : ""
+                }
 
             </div>
 
@@ -1031,6 +1193,12 @@ h1{
 
     </div>
 
+    ${
+        item.valorUnitario !== null
+        ? `<div class="linha"><b>Valor Unitário:</b> ${item.valorUnitario.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</div>`
+        : ""
+    }
+
 </div>
 
 `;
@@ -1096,6 +1264,18 @@ function montarRelatorioImagem(){
     const quatroOuMais =
     resultado.filter(x=>x.qtdPulmoes>=4).length;
 
+    const valorTotalEstoque =
+    resultado.reduce(
+        (s,x)=>s + (x.valorTotalItem || 0),
+        0
+    );
+
+    const valorTotalFormatado =
+    valorTotalEstoque.toLocaleString(
+        "pt-BR",
+        {style:"currency",currency:"BRL"}
+    );
+
     function linha(label, valor){
 
         return `
@@ -1143,6 +1323,11 @@ function montarRelatorioImagem(){
         <div class="ri-kpi">
             <div class="ri-kpi-label">Total de Pulmões</div>
             <div class="ri-kpi-valor">${totalPulmoes}</div>
+        </div>
+
+        <div class="ri-kpi">
+            <div class="ri-kpi-label">Valor Total em Estoque</div>
+            <div class="ri-kpi-valor">${valorTotalFormatado}</div>
         </div>
 
     </div>

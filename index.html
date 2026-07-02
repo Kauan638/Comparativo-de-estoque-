@@ -116,6 +116,37 @@
 
                 </div>
 
+                <!-- VALOR UNITÁRIO -->
+
+                <div class="upload-box">
+
+                    <label>
+                        💲 Valor por Unidade (Custo Líq.)
+                    </label>
+
+                    <label
+                        class="upload-btn"
+                        for="arquivoValores">
+
+                        Selecionar Arquivo
+
+                    </label>
+
+                    <input
+                        type="file"
+                        id="arquivoValores"
+                        accept=".txt,.csv">
+
+                    <div
+                        class="upload-nome"
+                        id="nomeValores">
+
+                        Nenhum arquivo selecionado
+
+                    </div>
+
+                </div>
+
             </div>
 
             <br>
@@ -184,6 +215,18 @@
 
                 <span id="kpiSemApanha">
                     0
+                </span>
+
+            </div>
+
+            <div class="kpi-card">
+
+                <h3>
+                    Valor Total em Estoque
+                </h3>
+
+                <span id="kpiValorTotal">
+                    R$ 0,00
                 </span>
 
             </div>
