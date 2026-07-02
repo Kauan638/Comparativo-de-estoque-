@@ -356,6 +356,17 @@ Cor da borda lateral = significado real do dado
 .kpi-card:nth-child(4){ border-left-color:var(--red); }
 .kpi-card:nth-child(4) span{ color:var(--red); }
 
+/* mapeamento semântico explícito por classe —
+   usado quando a cor precisa ser fixa independente
+   da posição do card no grid (ex.: ganho/perda
+   financeira no Comparativo de Estoque) */
+
+.kpi-card.kpi-ganho{ border-left-color:var(--green); }
+.kpi-card.kpi-ganho span{ color:var(--green); }
+
+.kpi-card.kpi-perda{ border-left-color:var(--red); }
+.kpi-card.kpi-perda span{ color:var(--red); }
+
 /* =========================
 FILTROS
 ========================= */
@@ -1129,6 +1140,9 @@ grid-template-columns:repeat(2,1fr);
 
 }
 
+.item-valor.item-valor--ganho{ color:var(--green); }
+.item-valor.item-valor--perda{ color:var(--red); }
+
 .pulmoes-lista{
 
     display:flex;
@@ -1582,3 +1596,6 @@ grid-template-columns:repeat(2,1fr);
 
     color:var(--amber);
 }
+
+.ri-dist-valor.ri-dist-valor--ganho{ color:var(--green); }
+.ri-dist-valor.ri-dist-valor--perda{ color:var(--red); }

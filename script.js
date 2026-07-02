@@ -13,7 +13,7 @@ let resultado = [];
 
 document
 .getElementById("arquivoPosicoes")
-.addEventListener("change", function(){
+?.addEventListener("change", function(){
 
     const arquivo = this.files[0];
 
@@ -28,7 +28,7 @@ document
 
 document
 .getElementById("arquivoDiferenca")
-.addEventListener("change", function(){
+?.addEventListener("change", function(){
 
     const arquivo = this.files[0];
 
@@ -43,7 +43,7 @@ document
 
 document
 .getElementById("arquivoValores")
-.addEventListener("change", function(){
+?.addEventListener("change", function(){
 
     const arquivo = this.files[0];
 
@@ -99,7 +99,7 @@ async function processar(){
         const arquivoValores =
         document
         .getElementById("arquivoValores")
-        .files[0];
+        ?.files[0];
 
         if(
             !arquivoPosicoes ||
@@ -487,11 +487,6 @@ function gerarComparativo(){
         ? `${posicaoApanha.CODRUA}.${posicaoApanha.NROPREDIO}.${posicaoApanha.NROAPARTAMENTO}.${posicaoApanha.NROSALA}`
         : null;
 
-        const quantidadeApanha =
-        posicaoApanha
-        ? Number(posicaoApanha.QTD_END || 0)
-        : 0;
-
         const pulmoesBrutos =
         mapaPulmoes[sku] || [];
 
@@ -509,13 +504,19 @@ function gerarComparativo(){
         const valorUnitario =
         mapaValores[sku] ?? null;
 
-        const quantidadeTotal =
-        quantidadeApanha +
-        pulmoes.reduce((s,p)=>s+p.quantidade,0);
+        const diferencaNum =
+        colDiferenca
+        ? parseNumeroPtBR(linha[colDiferenca])
+        : null;
 
-        const valorTotalItem =
-        valorUnitario !== null
-        ? valorUnitario * quantidadeTotal
+        // impacto financeiro da divergência:
+        // quantidade divergente (comercial vs CD)
+        // multiplicada pelo custo unitário.
+        // positivo = ganho (sobra) / negativo = perda (falta)
+
+        const valorDivergencia =
+        (valorUnitario !== null && diferencaNum !== null)
+        ? diferencaNum * valorUnitario
         : null;
 
         resultado.push({
@@ -545,7 +546,7 @@ function gerarComparativo(){
 
             valorUnitario,
 
-            valorTotalItem
+            valorDivergencia
 
         });
 
@@ -668,14 +669,24 @@ function atualizarKPIs(){
         x=>x.qtdPulmoes >= 4
     ).length;
 
-    const valorTotalEstoque =
-    resultado.reduce(
-        (s,x)=>s + (x.valorTotalItem || 0),
-        0
+    const valorGanho =
+    resultado
+    .filter(x=>x.valorDivergencia !== null && x.valorDivergencia > 0)
+    .reduce((s,x)=>s + x.valorDivergencia, 0);
+
+    const valorPerda =
+    resultado
+    .filter(x=>x.valorDivergencia !== null && x.valorDivergencia < 0)
+    .reduce((s,x)=>s + Math.abs(x.valorDivergencia), 0);
+
+    document.getElementById("kpiValorGanho").innerText =
+    valorGanho.toLocaleString(
+        "pt-BR",
+        {style:"currency",currency:"BRL"}
     );
 
-    document.getElementById("kpiValorTotal").innerText =
-    valorTotalEstoque.toLocaleString(
+    document.getElementById("kpiValorPerda").innerText =
+    valorPerda.toLocaleString(
         "pt-BR",
         {style:"currency",currency:"BRL"}
     );
@@ -820,6 +831,24 @@ function renderizarCards(dados = resultado){
                     : ""
                 }
 
+                ${
+                    item.valorDivergencia !== null
+                    ? `
+                <div class="item-linha">
+
+                    <span class="item-label">
+                        ${item.valorDivergencia >= 0 ? "📈 Impacto (Ganho)" : "📉 Impacto (Perda)"}
+                    </span>
+
+                    <span class="item-valor ${item.valorDivergencia >= 0 ? "item-valor--ganho" : "item-valor--perda"}">
+                        ${item.valorDivergencia.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
+                    </span>
+
+                </div>
+                    `
+                    : ""
+                }
+
             </div>
 
         </div>
@@ -897,14 +926,14 @@ window.addEventListener("load",()=>{
 
     document
     .getElementById("filtroSKU")
-    .addEventListener(
+    ?.addEventListener(
         "input",
         aplicarFiltros
     );
 
     document
     .getElementById("filtroQtdPulmoes")
-    .addEventListener(
+    ?.addEventListener(
         "input",
         aplicarFiltros
     );
@@ -1199,6 +1228,12 @@ h1{
         : ""
     }
 
+    ${
+        item.valorDivergencia !== null
+        ? `<div class="linha"><b>${item.valorDivergencia >= 0 ? "Impacto (Ganho):" : "Impacto (Perda):"}</b> ${item.valorDivergencia.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</div>`
+        : ""
+    }
+
 </div>
 
 `;
@@ -1264,24 +1299,34 @@ function montarRelatorioImagem(){
     const quatroOuMais =
     resultado.filter(x=>x.qtdPulmoes>=4).length;
 
-    const valorTotalEstoque =
-    resultado.reduce(
-        (s,x)=>s + (x.valorTotalItem || 0),
-        0
-    );
+    const valorGanho =
+    resultado
+    .filter(x=>x.valorDivergencia !== null && x.valorDivergencia > 0)
+    .reduce((s,x)=>s + x.valorDivergencia, 0);
 
-    const valorTotalFormatado =
-    valorTotalEstoque.toLocaleString(
+    const valorPerda =
+    resultado
+    .filter(x=>x.valorDivergencia !== null && x.valorDivergencia < 0)
+    .reduce((s,x)=>s + Math.abs(x.valorDivergencia), 0);
+
+    const valorGanhoFormatado =
+    valorGanho.toLocaleString(
         "pt-BR",
         {style:"currency",currency:"BRL"}
     );
 
-    function linha(label, valor){
+    const valorPerdaFormatado =
+    valorPerda.toLocaleString(
+        "pt-BR",
+        {style:"currency",currency:"BRL"}
+    );
+
+    function linha(label, valor, classeExtra){
 
         return `
         <div class="ri-dist-linha">
             <span class="ri-dist-label">${label}</span>
-            <span class="ri-dist-valor">${valor}</span>
+            <span class="ri-dist-valor ${classeExtra || ""}">${valor}</span>
         </div>
         `;
 
@@ -1325,11 +1370,6 @@ function montarRelatorioImagem(){
             <div class="ri-kpi-valor">${totalPulmoes}</div>
         </div>
 
-        <div class="ri-kpi">
-            <div class="ri-kpi-label">Valor Total em Estoque</div>
-            <div class="ri-kpi-valor">${valorTotalFormatado}</div>
-        </div>
-
     </div>
 
     <div class="ri-secao-titulo">
@@ -1344,6 +1384,17 @@ function montarRelatorioImagem(){
         ${linha("Itens com 4 ou mais pulmões", quatroOuMais)}
         ${linha("Itens sem pulmão", semPulmao)}
         ${linha("Itens sem apanha", semApanha)}
+
+    </div>
+
+    <div class="ri-secao-titulo">
+        Impacto Financeiro das Divergências
+    </div>
+
+    <div class="ri-distribuicao">
+
+        ${linha("Valor Ganho (divergência positiva)", valorGanhoFormatado, "ri-dist-valor--ganho")}
+        ${linha("Valor Perda (divergência negativa)", valorPerdaFormatado, "ri-dist-valor--perda")}
 
     </div>
 
