@@ -1712,7 +1712,65 @@ h1{
 // GERAR IMAGEM PARA WHATSAPP
 // =====================================
 
-function montarRelatorioImagem(){
+function obterResumoFiltrosAtivos(){
+
+    const partes = [];
+
+    const skuFiltro =
+    document
+    .getElementById("filtroSKU")
+    ?.value
+    .trim();
+
+    if(skuFiltro){
+
+        partes.push(`SKU/Descrição: "${skuFiltro}"`);
+
+    }
+
+    const qtdFiltro =
+    document
+    .getElementById("filtroQtdPulmoes")
+    ?.value
+    .trim();
+
+    if(qtdFiltro){
+
+        partes.push(`Nº de pulmões: ${qtdFiltro}`);
+
+    }
+
+    const tipoValor =
+    document
+    .getElementById("filtroTipoValor")
+    ?.value;
+
+    if(tipoValor && tipoValor !== "todos"){
+
+        partes.push(
+            tipoValor === "ganho"
+            ? "Somente Ganho"
+            : "Somente Perda"
+        );
+
+    }
+
+    const pavilhoesFiltro =
+    obterPavilhoesFiltroAtual();
+
+    if(pavilhoesFiltro.length){
+
+        partes.push(`Pavilhão: ${pavilhoesFiltro.join(", ")}`);
+
+    }
+
+    return partes.length
+    ? partes.join(" · ")
+    : "Nenhum filtro ativo — base completa";
+
+}
+
+function montarRelatorioImagem(dadosBase = resultado, resumoFiltro = null){
 
     const container =
     document.getElementById("relatorioImagem");
@@ -1720,36 +1778,36 @@ function montarRelatorioImagem(){
     const agora =
     new Date().toLocaleString("pt-BR");
 
-    const total = resultado.length;
+    const total = dadosBase.length;
 
     const semApanha =
-    resultado.filter(x=>!x.enderecoApanha).length;
+    dadosBase.filter(x=>!x.enderecoApanha).length;
 
     const semPulmao =
-    resultado.filter(x=>x.qtdPulmoes===0).length;
+    dadosBase.filter(x=>x.qtdPulmoes===0).length;
 
     const totalPulmoes =
-    resultado.reduce((s,x)=>s+x.qtdPulmoes,0);
+    dadosBase.reduce((s,x)=>s+x.qtdPulmoes,0);
 
     const umPulmao =
-    resultado.filter(x=>x.qtdPulmoes===1).length;
+    dadosBase.filter(x=>x.qtdPulmoes===1).length;
 
     const doisPulmoes =
-    resultado.filter(x=>x.qtdPulmoes===2).length;
+    dadosBase.filter(x=>x.qtdPulmoes===2).length;
 
     const tresPulmoes =
-    resultado.filter(x=>x.qtdPulmoes===3).length;
+    dadosBase.filter(x=>x.qtdPulmoes===3).length;
 
     const quatroOuMais =
-    resultado.filter(x=>x.qtdPulmoes>=4).length;
+    dadosBase.filter(x=>x.qtdPulmoes>=4).length;
 
     const valorGanho =
-    resultado
+    dadosBase
     .filter(x=>typeof x.valorDivergencia === "number" && !isNaN(x.valorDivergencia) && x.valorDivergencia > 0)
     .reduce((s,x)=>s + x.valorDivergencia, 0);
 
     const valorPerda =
-    resultado
+    dadosBase
     .filter(x=>typeof x.valorDivergencia === "number" && !isNaN(x.valorDivergencia) && x.valorDivergencia < 0)
     .reduce((s,x)=>s + Math.abs(x.valorDivergencia), 0);
 
@@ -1789,6 +1847,8 @@ function montarRelatorioImagem(){
         <div class="ri-data">
             ${agora}
         </div>
+
+        ${resumoFiltro ? `<div class="ri-filtro-ativo">🔎 ${resumoFiltro}</div>` : ""}
 
     </div>
 
@@ -1935,6 +1995,119 @@ async function gerarImagemRelatorio(){
 
             link.download =
             `comparativo_estoque_${new Date().toISOString().slice(0,10)}.png`;
+
+            link.click();
+
+            alert(
+                "Seu navegador não permitiu copiar direto pro clipboard, então baixei a imagem — é só anexar ela no WhatsApp."
+            );
+
+        }
+
+    }, "image/png");
+
+}
+
+// =====================================
+// RELATÓRIO EXECUTIVO — FILTRADO
+// =====================================
+// Mesmo modelo do relatório executivo acima, mas calcula os
+// KPIs/distribuições só em cima do que está passando pelos
+// filtros ativos da tela (SKU, pulmões, ganho/perda e — o mais
+// pedido — pavilhão). Mostra um resumo dos filtros aplicados
+// no topo da imagem.
+
+async function gerarImagemRelatorioFiltrado(){
+
+    const dadosFiltrados =
+    obterFiltrado();
+
+    if(!dadosFiltrados.length){
+
+        alert(
+            "Nenhum item pra gerar relatório com os filtros atuais."
+        );
+
+        return;
+
+    }
+
+    montarRelatorioImagem(
+        dadosFiltrados,
+        obterResumoFiltrosAtivos()
+    );
+
+    if(document.fonts && document.fonts.ready){
+
+        await document.fonts.ready;
+
+    }
+
+    const elemento =
+    document.getElementById("relatorioImagem");
+
+    let canvas;
+
+    try{
+
+        canvas = await html2canvas(elemento, {
+
+            backgroundColor: "#14181C",
+
+            scale: 2
+
+        });
+
+    }
+
+    catch(erro){
+
+        console.error(erro);
+
+        alert(
+            "Não consegui gerar a imagem. Veja o console (F12) pra detalhes."
+        );
+
+        return;
+
+    }
+
+    canvas.toBlob(async blob=>{
+
+        if(!blob){
+
+            alert("Falha ao gerar a imagem.");
+
+            return;
+
+        }
+
+        try{
+
+            await navigator.clipboard.write([
+
+                new ClipboardItem({
+                    "image/png": blob
+                })
+
+            ]);
+
+            alert(
+                "✅ Imagem copiada! Agora é só abrir a conversa no WhatsApp e colar (Ctrl+V)."
+            );
+
+        }
+
+        catch(erro){
+
+            console.error(erro);
+
+            const link = document.createElement("a");
+
+            link.href = URL.createObjectURL(blob);
+
+            link.download =
+            `comparativo_estoque_filtrado_${new Date().toISOString().slice(0,10)}.png`;
 
             link.click();
 

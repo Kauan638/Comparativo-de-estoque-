@@ -1424,6 +1424,18 @@ grid-template-columns:repeat(2,1fr);
 
 }
 
+.btn-whatsapp-filtrado{
+
+    background:var(--blue);
+
+    color:#0D1B29;
+}
+
+.btn-whatsapp-filtrado:hover{
+
+    background:#3E7EBD;
+}
+
 /* =======================================================
    RELATÓRIO PARA IMAGEM (WHATSAPP)
    Renderizado fora da tela e capturado com html2canvas
@@ -1503,6 +1515,29 @@ grid-template-columns:repeat(2,1fr);
 
     font-size:.85rem;
 
+}
+
+.ri-filtro-ativo{
+
+    margin-top:10px;
+
+    display:inline-block;
+
+    padding:6px 14px;
+
+    background:var(--blue-dim);
+
+    border:1px solid var(--blue);
+
+    border-radius:20px;
+
+    color:var(--blue);
+
+    font-family:var(--font-mono);
+
+    font-size:.78rem;
+
+    font-weight:600;
 }
 
 .ri-kpis{
