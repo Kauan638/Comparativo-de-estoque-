@@ -8,6 +8,256 @@ let dadosValores = [];
 let resultado = [];
 
 // =====================================
+// CONFIGURAÇÃO DE PAVILHÕES
+// =====================================
+// Mesma referência oficial usada no Gerador de Abastecimento PCP
+// (Perecível.txt, Pavilhão_1.txt, Pavilhão_2.txt, Pavilhão_3.txt).
+// O pavilhão de cada SKU é definido pela Rua (CODRUA) da posição
+// de apanha.
+
+const PAVILHOES = [
+
+    {
+        nome:"Perecível",
+        ruas:[
+            [26,27],
+            [29,31],
+        ],
+    },
+    {
+        nome:"Pavilhão 1",
+        ruas:[
+            [3,14],
+            [21,24],
+            [51,65],
+        ],
+    },
+    {
+        nome:"Pavilhão 2",
+        ruas:[
+            [71,106],
+        ],
+    },
+    {
+        nome:"Pavilhão 3",
+        ruas:[
+            [311,317],
+        ],
+    },
+
+];
+
+function obterPavilhao(rua){
+
+    const r = Number(rua) || 0;
+
+    const encontrado =
+    PAVILHOES.find(p =>
+        p.ruas.some(([ruaInicio, ruaFim]) =>
+            r >= ruaInicio &&
+            r <= ruaFim
+        )
+    );
+
+    return encontrado
+    ? encontrado.nome
+    : "Sem Pavilhão";
+
+}
+
+function popularFiltroPavilhao(){
+
+    const opcoes =
+    document.getElementById("filtroPavilhaoOpcoes");
+
+    if(!opcoes) return;
+
+    const nomes =
+    PAVILHOES
+    .map(p => p.nome)
+    .concat(["Sem Pavilhão"]);
+
+    let html = `
+    <label class="filtro-pavilhao-item filtro-pavilhao-todos">
+        <input
+            type="checkbox"
+            id="filtroPavilhaoTodos"
+            checked
+            onchange="alternarTodosPavilhoes(this)">
+        Todos Pavilhões
+    </label>
+    <div class="filtro-pavilhao-separador"></div>
+    `;
+
+    nomes.forEach(nome=>{
+
+        html += `
+        <label class="filtro-pavilhao-item">
+            <input
+                type="checkbox"
+                class="filtroPavilhaoItem"
+                value="${nome}"
+                checked
+                onchange="atualizarSelecaoPavilhoes()">
+            ${nome}
+        </label>
+        `;
+
+    });
+
+    opcoes.innerHTML = html;
+
+    atualizarLabelPavilhao();
+
+}
+
+function togglePavilhaoDropdown(){
+
+    const opcoes =
+    document.getElementById("filtroPavilhaoOpcoes");
+
+    if(!opcoes) return;
+
+    opcoes.style.display =
+    opcoes.style.display === "none"
+    ? "block"
+    : "none";
+
+}
+
+document.addEventListener("click", function(e){
+
+    const container =
+    document.getElementById("filtroPavilhaoMulti");
+
+    const opcoes =
+    document.getElementById("filtroPavilhaoOpcoes");
+
+    if(!container || !opcoes) return;
+
+    if(!container.contains(e.target)){
+
+        opcoes.style.display = "none";
+
+    }
+
+});
+
+function alternarTodosPavilhoes(chkTodos){
+
+    document
+    .querySelectorAll(".filtroPavilhaoItem")
+    .forEach(chk=>{
+
+        chk.checked = chkTodos.checked;
+
+    });
+
+    atualizarLabelPavilhao();
+
+    if(typeof aplicarFiltros === "function"){
+
+        aplicarFiltros();
+
+    }
+
+}
+
+function atualizarSelecaoPavilhoes(){
+
+    const itens =
+    document.querySelectorAll(".filtroPavilhaoItem");
+
+    const chkTodos =
+    document.getElementById("filtroPavilhaoTodos");
+
+    const todosMarcados =
+    Array.from(itens)
+    .every(chk => chk.checked);
+
+    if(chkTodos){
+
+        chkTodos.checked = todosMarcados;
+
+    }
+
+    atualizarLabelPavilhao();
+
+    if(typeof aplicarFiltros === "function"){
+
+        aplicarFiltros();
+
+    }
+
+}
+
+function atualizarLabelPavilhao(){
+
+    const label =
+    document.getElementById("filtroPavilhaoLabel");
+
+    if(!label) return;
+
+    const itens =
+    Array.from(
+        document.querySelectorAll(".filtroPavilhaoItem")
+    );
+
+    const marcados =
+    itens.filter(chk => chk.checked);
+
+    if(marcados.length === 0){
+
+        label.innerText = "Nenhum Pavilhão";
+
+    }
+    else if(marcados.length === itens.length){
+
+        label.innerText = "Todos Pavilhões";
+
+    }
+    else{
+
+        label.innerText =
+        marcados
+        .map(chk => chk.value)
+        .join(", ");
+
+    }
+
+}
+
+// Array vazio = todos marcados = sem filtro (mesmo
+// comportamento de antes de existir o filtro de pavilhão).
+function obterPavilhoesFiltroAtual(){
+
+    const itens =
+    Array.from(
+        document.querySelectorAll(".filtroPavilhaoItem")
+    );
+
+    if(!itens.length){
+
+        return [];
+
+    }
+
+    const marcados =
+    itens.filter(chk => chk.checked);
+
+    if(marcados.length === itens.length){
+
+        return [];
+
+    }
+
+    return marcados.map(chk => chk.value);
+
+}
+
+popularFiltroPavilhao();
+
+// =====================================
 // INICIALIZAÇÃO — NOME DOS ARQUIVOS
 // =====================================
 
@@ -542,6 +792,9 @@ function gerarComparativo(){
 
             enderecoApanha,
 
+            pavilhao:
+            obterPavilhao(posicaoApanha?.CODRUA),
+
             pulmoes,
 
             qtdPulmoes: pulmoes.length,
@@ -998,6 +1251,9 @@ function obterFiltrado(){
     .getElementById("ordenarPor")
     ?.value || "sku";
 
+    const pavilhoesFiltro =
+    obterPavilhoesFiltroAtual();
+
     let filtrado = resultado.filter(item=>{
 
         // SKU: correspondência EXATA — o código
@@ -1038,7 +1294,13 @@ function obterFiltrado(){
 
             (tipoValor === "perda" && temValor && item.valorDivergencia < 0);
 
-        return skuOk && qtdOk && valorOk;
+        const pavilhaoOk =
+
+            !pavilhoesFiltro.length ||
+
+            pavilhoesFiltro.includes(item.pavilhao);
+
+        return skuOk && qtdOk && valorOk && pavilhaoOk;
 
     });
 
